@@ -1,0 +1,148 @@
+/*IMPORTANTE: toda vez que mecher em algo de uma anotação @,editar 
+apagar etc, dá o mvn clean, e depois executa o programa normalmente
+
+
+
+CRIACAO DA TABELA
+ Se coloca @Entity em todas as classes que serão entidades, e tem 
+ propiedades opcionais que são:
+ name: O nome para se referir a entidade.Esse nome nao pode ser 
+ reservado de JPQL (Java Persistence Query Language). O uso seria:
+ @Entity(name:Rota)
+ E tem mais uma coisa, existe o @Table que dai tu renomeia a tabela.
+ então se não tiver esse @Table o nome da tabela vai ser o mesmo que o
+ da entidade. Exemplo de uso:
+ @Entity(name= "Rota")
+ @Table( name="Rota_Aerea")
+
+ Dai quando for fazer um insert ou select tu usa o nome Rota_Aerea 
+
+****Atualmente nomes de classes como PlanoDeVoo ele separa por _ quando encontra
+uma letra maiuscula dentro do nome da classe, não sei pq tb
+
+
+
+DEFINIR CHAVE PRIMARIA
+ @Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+servem para definir a chave primaria. O @ID fala que  é chave primaria  e
+se nao tiver o @GeneratedValue significa que a aplicação(nosso codigo) que vai gerar e gerenciar
+essa chaves. Quando possuiu o @GeneratedValue significa que o provedor de peristencia (JPA)
+ue vai gerenciar. (melhor deixar sempre o jpa cuidar disso) 
+Quando se usa o @GeneratedValue pode se definir a estrategia de como gerar e gerenciar essa chave:
+
+GenerationType.AUTO:o jpa que define o melhor jeito
+
+GenerationType.IDENTITY: diz que o valor a ser atribuido a chave  serão
+gerados pela coluna de auto incremento do banco de dados, então se tu tem uma id o proprio banco que 
+vai ficar dando id++ a cada novo valor adicionado no banco 
+
+GenerationType.SEQUENCE: Valores gerados a partir de uma sequencia, aqui essa equencia é definida por
+outro atributo no generate que é o generator dai um exemplo:
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "leo"); isso significa que vou usar
+a sequencia "leo" para as chaves primarias. Só que no caso dai precisa criar essa sequencia assim:
+@SequenceGenerator(name = "leo", sequenceName = "leo_",initialValue = 1,allocationSize = 10)
+o atributo nome que é o nome da sequencia, sequenceName é o nome da variavel que guarda o valor da sequencia,
+(pelo menos entendi assim),o valor inicial e o tamanho max desta seuqencia.
+Todos esses atributos são opcionais
+
+@SequenceGenerator
+@SequenceGenerator usado apos escolher o SEQUENCE 
+
+GenerationType.TABLE: nao recomendado
+Só que estas questões de qual escolher é quando fazemos um cadastro pelo codigo e não pelos inserts
+do SQL
+
+Lembrando não temos a necessidade de usar o GenerationType pois a chave primiera esta sendo enviada
+no construtor, tu só usa ele quando esta chave não é informada
+
+
+
+
+
+Relacionamentos entre tabelas
+existem varios tipos dai tu precisa ver o tipo de relacionameto de cada entidade no diagrama
+de classes para saber qual utilizar aqui. No rotas existe o relacionamento 1 para muitos com
+a entidade Aerovia. Então ela deve ser esclarecida aqui. Vou explicar todos os tipos abaixo:
+Tipos de atributos: (atributos que podem ir dentro dos relacionamentos,alguns obrigatorios)
+
+- targetEntity: é a classe da entidade que é o destino da associação. 
+O default é o tipo do campo ou a propriedade que armazena a associação.
+
+- cascade: pode ser configurado para qualquer um dos membros da enumeração javax.persistence.CascadeType.
+Esse cara é legal, ele é assim tu bota cascade = CascadeType. dai mostra todos os tipos que tem:
+    *PERSIST: Ele propaga a operação de persistir um objeto Pai para um objeto Filho, assim quando salvar
+     a Entidade Cliente, também será salvo todas as Entidades Telefone associadas.
+    *MERGE: Ele propaga a operação de atualização de um objeto Pai para um objeto Filho, assim quando 
+    atualizadas as informações da Entidade Cliente, também será atualizado no banco de dados todas as informações
+     das Entidades Telefone associadas.
+    *REMOVE: Ele propaga a operação de remoção de um objeto Pai para um objeto Filho, assim quando remover a Entidade Cliente,
+     também será removida todas as entidades Telefone associadas.
+    *REFRESH: Ele propaga a operação de recarregar de um objeto Pai para um objeto Filho, assim, quando houver atualização no 
+    banco de dados na Entidade Cliente, todas as entidades Telefone associadas serão recarregadas do banco de dados.
+    *ALL: Corresponde a todas as operações acima (MERGE, PERSIST, REFRESH e REMOVE).
+    *DETACH: "A operação de desanexação remove a entidade do contexto persistente. Quando usamos CascaseType.DETACH, a entidade 
+    filha também é removida do contexto persistente".
+
+- fetch: pode ser configurado para EAGER ou LAZY. https://www.devmedia.com.br/lazy-e-eager-loading-com-hibernate/29554
+    LAZY = preguiçoso,exemplo:Existe uma classe Carro e uma Perifericos_carro e a relação é que um carro possuiu n perifericos. 
+    Quando na entidade Carro tu definir essa relação @OneToMany ele por default coloca ja o fetch para lazy, isso seria, quando 
+    tu fazer uma busca por um carro ele só tara as informações do carro sem os perifericos,pq ele é preguiçoso, ele só tara as
+    informações dos perifericos do carro quando realmente precisar.
+    EAGER= tras tudo de uma vez
+    *quando usar um e outro: no caso do carro, se ele possuiur muitos perifericos o sistema ficara lento se todas vez que tu for 
+    pesquisar sobre um carro ele trazer esses perifericos então se usa o LAZY
+
+- optional: indica se o valor sendo mapeado pode ser null.
+
+- orphanRemoval: indica que se o valor sendo mapeado é deletado, esta entidade também será deletada.
+
+- mappedBy: indica que um relacionamento one-to-one bidirecional é apropriado pela entidade nomeada. 
+O dono possui a chave-primária da entidade subordinada.
+
+
+
+Tipos de relacionamento:
+
+Uma para um:
+@OneToOne
+é a mais facil pois só possuiu atributos opcionais, que sao eles:
+ targetEntity
+- cascade
+- fetch
+- optional
+- orphanRemoval 
+- mappedBy
+
+muitos para um/ um para muitos
+@ManyToOne  @OneToMany
+a diferença aqui é que o atributo mappedby é obrigatorio caso a relação seja bidirecional no resto tem os mesmos atributos
+no caso quando for usar o @manyToOne tu usa tb o @JoinColumm, ele é utilizado para nomearmos a coluna que possui a 
+chave-estrangeira requerida pela associação, e tb se usa muito o @JoinTable que cria a tabela intermediaria entre duas relações
+que salva suas chaves estrangeiras
+
+
+muitos para muitos
+ @ManyToMany 
+- mappedBy: é o campo que indica o dono do relacionamento. Este atributo só é necessário quando a associação é bidirecional.
+- targetEntity: é a classe da entidade que é o destino da associação.
+- cascade: indica o comportamento em cascata da associação, o default é none (nenhum).
+- fetch: indica o comportamento de busca da associação, sendo que o default é LAZY.
+
+LIGAÇÃO POR FOREIN KEY
+
+@JoinColumm: neste caso aqui o relacionamento entre o rota e aerovias é @OneToMany
+isso significa que para uma rota possuiu varias aerovias, então quando tu faz @JoinColumm tu acabou de fazer um coluna na tebela
+aerovias que possui a fk de Rota, assim caso tu queira referenciar que uma rota possuiu n aerovias lá no insert de aerovias tu vai 
+adicionar uma rota. No caso o @JoinColumm possuiu varios atributos, mas o que usamos é o name, que dai vai ser o nome da coluna
+criada lá no aerovias que guarda a fk de rotas. 
+ 
+
+@JoinTable: https://stackoverflow.com/questions/5478328/in-which-case-do-you-use-the-jpa-jointable-annotation
+gerealmente se usa o joinTable quando existe uma relação de muitos para muitos @ManyToMany
+
+@RequestParam serve para tu obrigar um parametro num endpoint, sem ele aquele parametro vira opcional
+
+para informações do TO_TIMESTAMP
+https://databasefaqs.com/postgresql-to_timestamp/#:~:text=TO_TIMESTAMP%20with%20timezone-,PostgreSQL%20TO_TIMESTAMP%20with%20timezone%20utc,AT%20TIME%20ZONE%20'UTC'.
+*/
